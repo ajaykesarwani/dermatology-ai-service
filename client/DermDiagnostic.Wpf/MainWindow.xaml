@@ -1,0 +1,207 @@
+<Window x:Class="DermDiagnostic.Wpf.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="DermDiagnostic AI — Skin Lesion Classifier"
+        Height="680" Width="960"
+        WindowStartupLocation="CenterScreen"
+        Background="#0f0f1a">
+
+    <Window.Resources>
+        <!-- Color palette -->
+        <SolidColorBrush x:Key="BgPrimary"    Color="#0f0f1a"/>
+        <SolidColorBrush x:Key="BgCard"       Color="#1a1a2e"/>
+        <SolidColorBrush x:Key="BgCardDark"   Color="#16213e"/>
+        <SolidColorBrush x:Key="AccentBlue"   Color="#4f8ef7"/>
+        <SolidColorBrush x:Key="AccentGreen"  Color="#22c55e"/>
+        <SolidColorBrush x:Key="AccentRed"    Color="#ef4444"/>
+        <SolidColorBrush x:Key="TextPrimary"  Color="#e2e8f0"/>
+        <SolidColorBrush x:Key="TextMuted"    Color="#64748b"/>
+        <SolidColorBrush x:Key="Border"       Color="#2d3748"/>
+
+        <!-- Button style -->
+        <Style x:Key="PrimaryButton" TargetType="Button">
+            <Setter Property="Background" Value="#4f8ef7"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Height" Value="42"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="8"
+                                Padding="16,0">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#6ba3fa"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Background" Value="#2d3748"/>
+                                <Setter Property="Foreground" Value="#475569"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="SecondaryButton" TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
+            <Setter Property="Background" Value="#22c55e"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#16a34a"/>
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Background" Value="#2d3748"/>
+                    <Setter Property="Foreground" Value="#475569"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Card border style -->
+        <Style x:Key="Card" TargetType="Border">
+            <Setter Property="Background" Value="#1a1a2e"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="BorderBrush" Value="#2d3748"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="16"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- ===== HEADER ===== -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,16">
+            <TextBlock Text="🔬 DermDiagnostic AI"
+                       FontSize="26" FontWeight="Bold"
+                       Foreground="{StaticResource TextPrimary}"/>
+            <TextBlock Text="Skin lesion classification powered by ONNX Runtime INT8"
+                       FontSize="12" Foreground="{StaticResource TextMuted}"
+                       Margin="0,4,0,0"/>
+        </StackPanel>
+
+        <!-- ===== MAIN CONTENT ===== -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="16"/>
+                <ColumnDefinition Width="300"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Image display card -->
+            <Border Grid.Column="0" Style="{StaticResource Card}">
+                <Grid>
+                    <!-- Placeholder text when no image loaded -->
+                    <TextBlock x:Name="TxtPlaceholder"
+                               Text="Click 'Load Image' to upload a dermoscopic image"
+                               Foreground="{StaticResource TextMuted}"
+                               FontSize="14" TextAlignment="Center"
+                               VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                    <Image x:Name="ImgDisplay" Stretch="Uniform"/>
+                    <Canvas x:Name="OverlayCanvas"/>
+                </Grid>
+            </Border>
+
+            <!-- Sidebar -->
+            <StackPanel Grid.Column="2" VerticalAlignment="Top">
+
+                <!-- Action buttons card -->
+                <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+                    <StackPanel>
+                        <TextBlock Text="ACTIONS" FontSize="11" FontWeight="Bold"
+                                   Foreground="{StaticResource TextMuted}" Margin="0,0,0,12"/>
+                        <Button Content="📂  Load Dermoscopic Image"
+                                Style="{StaticResource PrimaryButton}"
+                                Margin="0,0,0,10"
+                                Click="BtnLoad_Click"/>
+                        <Button x:Name="BtnAnalyze"
+                                Content="⚡  Run AI Inference"
+                                Style="{StaticResource SecondaryButton}"
+                                IsEnabled="False"
+                                Click="BtnAnalyze_Click"/>
+
+                        <!-- Progress bar (hidden by default) -->
+                        <ProgressBar x:Name="PrgInference"
+                                     IsIndeterminate="True"
+                                     Height="4"
+                                     Margin="0,12,0,0"
+                                     Foreground="#4f8ef7"
+                                     Background="#2d3748"
+                                     Visibility="Collapsed"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Results card -->
+                <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+                    <StackPanel>
+                        <TextBlock Text="DIAGNOSIS" FontSize="11" FontWeight="Bold"
+                                   Foreground="{StaticResource TextMuted}" Margin="0,0,0,12"/>
+
+                        <!-- Short code badge -->
+                        <Border x:Name="BadgeBorder" Background="#2d3748" CornerRadius="6"
+                                Padding="10,6" HorizontalAlignment="Left" Margin="0,0,0,8">
+                            <TextBlock x:Name="TxtCode" Text="—"
+                                       FontSize="13" FontWeight="Bold"
+                                       Foreground="{StaticResource AccentBlue}"
+                                       FontFamily="Courier New"/>
+                        </Border>
+
+                        <!-- Full diagnosis name -->
+                        <TextBlock x:Name="TxtResult"
+                                   Text="Waiting for image…"
+                                   TextWrapping="Wrap"
+                                   FontSize="13"
+                                   Foreground="{StaticResource TextPrimary}"
+                                   Margin="0,0,0,16"/>
+
+                        <!-- Confidence -->
+                        <TextBlock Text="CONFIDENCE" FontSize="11" FontWeight="Bold"
+                                   Foreground="{StaticResource TextMuted}" Margin="0,0,0,6"/>
+                        <Grid Margin="0,0,0,4">
+                            <Border Background="#2d3748" CornerRadius="4" Height="8"/>
+                            <Border x:Name="ConfidenceBar" Background="#4f8ef7"
+                                    CornerRadius="4" Height="8"
+                                    HorizontalAlignment="Left" Width="0"/>
+                        </Grid>
+                        <TextBlock x:Name="TxtConfidence" Text="—"
+                                   FontSize="12" Foreground="{StaticResource TextMuted}"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Latency card -->
+                <Border Style="{StaticResource Card}">
+                    <StackPanel>
+                        <TextBlock Text="INFERENCE LATENCY" FontSize="11" FontWeight="Bold"
+                                   Foreground="{StaticResource TextMuted}" Margin="0,0,0,8"/>
+                        <TextBlock x:Name="TxtLatency" Text="— ms"
+                                   FontSize="22" FontWeight="Bold"
+                                   Foreground="{StaticResource AccentBlue}"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </Grid>
+
+        <!-- ===== STATUS BAR ===== -->
+        <Border Grid.Row="2" Background="#1a1a2e" CornerRadius="8"
+                Padding="12,8" Margin="0,16,0,0">
+            <Grid>
+                <TextBlock x:Name="TxtStatus" Text="Ready — load an image to begin"
+                           Foreground="{StaticResource TextMuted}" FontSize="12"
+                           VerticalAlignment="Center"/>
+                <TextBlock Text="DermDiagnostic AI v2.0  •  ONNX Runtime INT8"
+                           Foreground="{StaticResource TextMuted}" FontSize="11"
+                           HorizontalAlignment="Right" VerticalAlignment="Center"/>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

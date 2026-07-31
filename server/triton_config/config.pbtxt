@@ -1,0 +1,31 @@
+name: "skin_lesion_model"
+platform: "onnxruntime_onnx"
+max_batch_size: 16
+
+input [
+  {
+    name: "input"
+    data_type: TYPE_FP32
+    format: FORMAT_NCHW
+    dims: [ 3, 224, 224 ]
+  }
+]
+
+output [
+  {
+    name: "output"
+    data_type: TYPE_FP32
+    dims: [ 7 ] # Assuming 7 classes (e.g., HAM10000 dataset)
+  }
+]
+
+instance_group [
+  {
+    count: 2
+    kind: KIND_GPU
+  }
+]
+
+dynamic_batching {
+  max_queue_delay_microseconds: 50000
+}

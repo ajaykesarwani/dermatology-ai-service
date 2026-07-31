@@ -1,0 +1,25 @@
+services:
+  dermatology-api:
+    build:
+      context: ../server
+      dockerfile: Dockerfile
+    container_name: dermatology-api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../models:/models:ro          # read-only model mount
+    environment:
+      - MODEL_PATH=/models/efficientnet_quant_int8.onnx
+      - PYTHONUNBUFFERED=1            # ensures logs stream immediately
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s              # give model time to load before first probe
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

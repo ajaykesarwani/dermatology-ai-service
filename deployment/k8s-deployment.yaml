@@ -1,0 +1,84 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dermatology-api-deployment
+  labels:
+    app: dermatology-api
+    version: "2.0"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: dermatology-api
+  template:
+    metadata:
+      labels:
+        app: dermatology-api
+    spec:
+      containers:
+      - name: dermatology-api
+        image: dermatology-api:latest
+        ports:
+        - containerPort: 8000
+        env:
+        - name: MODEL_PATH
+          value: "/models/efficientnet_quant_int8.onnx"
+        - name: PYTHONUNBUFFERED
+          value: "1"
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "1Gi"
+          limits:
+            cpu: "2000m"
+            memory: "4Gi"
+          # Uncomment below to enable GPU on a GPU-capable node pool:
+          # limits:
+          #   nvidia.com/gpu: 1
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8000
+          initialDelaySeconds: 20
+          periodSeconds: 20
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+        volumeMounts:
+        - name: model-volume
+          mountPath: /models
+          readOnly: true
+      volumes:
+      - name: model-volume
+        persistentVolumeClaim:
+          claimName: model-pvc
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: model-pvc
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dermatology-api-service
+spec:
+  selector:
+    app: dermatology-api
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8000
+  type: LoadBalancer
