@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: dermatology-ai-api
+    env: docker
+    region: frankfurt
+    plan: free
+    dockerContext: .
+    dockerfilePath: server/Dockerfile
+    healthCheckPath: /healthz
+    envVars:
+      # Render dynamically provides a PORT environment variable (default 10000).
+      # However, our Dockerfile explicitly runs uvicorn on port 8000.
+      # By forcing PORT=8000, Render will map external HTTPS traffic to our container correctly.
+      - key: PORT
+        value: 8000
