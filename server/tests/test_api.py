@@ -7,12 +7,13 @@ Run with:
 import io
 import struct
 import zlib
+from unittest.mock import patch, MagicMock
 
 import numpy as np
 import pytest
 from fastapi.testclient import TestClient
 
-from app.main import app
+from app.main import app, MAX_FILE_SIZE_BYTES
 
 
 # ---------------------------------------------------------------------------
@@ -104,11 +105,17 @@ class TestPredict:
         assert response.status_code == 400
 
     def test_predict_rejects_oversized_file(self, client):
-        big_data = b"\xff\xd8\xff" + b"\x00" * (11 * 1024 * 1024)  # 11MB fake JPEG
-        response = client.post(
-            "/predict",
-            files={"file": ("big.jpg", big_data, "image/jpeg")},
-        )
+        """Simulate an oversized file by patching the UploadFile.size attribute."""
+        small_jpeg = b"\xff\xd8\xff" + b"\x00" * 10  # tiny valid JPEG header
+        oversized = MAX_FILE_SIZE_BYTES + 1  # 1 byte over the limit
+        with patch("app.main.UploadFile") as _:
+            # Use starlette's real UploadFile but inject the size directly
+            with patch("starlette.datastructures.UploadFile.size",
+                       new_callable=lambda: property(lambda self: oversized)):
+                response = client.post(
+                    "/predict",
+                    files={"file": ("big.jpg", small_jpeg, "image/jpeg")},
+                )
         assert response.status_code == 413
 
     def test_predict_with_valid_png(self, client):

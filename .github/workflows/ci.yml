@@ -54,4 +54,4 @@ jobs:
 
     - name: Build Docker image
       run: |
-        docker build -t dermatology-api:test -f server/Dockerfile server/
+        docker build -t dermatology-api:test -f server/Dockerfile .
