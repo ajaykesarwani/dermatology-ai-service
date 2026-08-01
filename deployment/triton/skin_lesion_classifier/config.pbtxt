@@ -1,0 +1,69 @@
+name: "skin_lesion_classifier"
+platform: "onnxruntime_onnx"
+max_batch_size: 32
+
+# ── Input ─────────────────────────────────────────────────────────────────────
+# The model expects a batch of RGB images pre-processed to (3, 224, 224),
+# normalized with ImageNet mean/std and formatted as CHW float32 tensors.
+input [
+  {
+    name: "input"
+    data_type: TYPE_FP32
+    format: FORMAT_NCHW
+    dims: [ 3, 224, 224 ]
+  }
+]
+
+# ── Output ────────────────────────────────────────────────────────────────────
+# Returns raw logits for 7 HAM10000 skin lesion classes.
+# Apply softmax client-side to convert to probability distribution.
+# Class order: akiec, bcc, bkl, df, mel, nv, vasc
+output [
+  {
+    name: "output"
+    data_type: TYPE_FP32
+    dims: [ 7 ]
+  }
+]
+
+# ── Execution Instances ────────────────────────────────────────────────────────
+# One GPU instance preferred; falls back to 2 CPU instances if no GPU is found.
+instance_group [
+  {
+    count: 1
+    kind: KIND_GPU
+    gpus: [ 0 ]
+  },
+  {
+    count: 2
+    kind: KIND_CPU
+  }
+]
+
+# ── Dynamic Batching ──────────────────────────────────────────────────────────
+# Triton will accumulate requests for up to 50ms before dispatching a batch.
+# This significantly improves GPU throughput under concurrent load.
+dynamic_batching {
+  preferred_batch_size: [ 4, 8, 16 ]
+  max_queue_delay_microseconds: 50000
+}
+
+# ── Optimization ──────────────────────────────────────────────────────────────
+optimization {
+  execution_accelerators {
+    gpu_execution_accelerator [
+      {
+        name: "tensorrt"
+        parameters {
+          key: "precision_mode"
+          value: "FP16"
+        }
+      }
+    ]
+    cpu_execution_accelerator [
+      {
+        name: "openvino"
+      }
+    ]
+  }
+}

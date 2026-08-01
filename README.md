@@ -20,7 +20,9 @@ graph TD
 - **Enterprise API Design**: FastAPI with `lifespan` context manager, `/healthz`, `/metrics`, and `/info` endpoints, structured logging, CORS middleware, 10 MB file size guard, and atomic request counters.
 - **Model Optimization**: PyTorch → ONNX export with INT8 dynamic quantization via ONNX Runtime — achieves **~6× faster CPU inference** vs. PyTorch eager mode.
 - **Modern Desktop Client**: Dark-themed C# WPF app with a real-time confidence bar, color-coded risk indicator, and animated progress indicator during inference.
-- **Production Ready**: Docker Compose with restart policy, read-only model volume, JSON log driver, and a Kubernetes manifest (Deployment + Service + PVC).
+- **NVIDIA Triton Support**: Full Triton Inference Server configuration with dynamic batching, TensorRT FP16 acceleration, GPU/CPU fallback, and gRPC interface.
+- **AWS Cloud Ready**: One-command deployment to **AWS ECS Fargate** via ECR image registry, Application Load Balancer, and full **Terraform IaC** (`aws/terraform/main.tf`).
+- **Production Ready**: Docker Compose with restart policy, read-only model volume, JSON log driver, and a Kubernetes manifest (Deployment + Service).
 - **CI/CD**: GitHub Actions pipeline with pip caching, Ruff linting, pytest, and Docker build validation.
 
 ## Inference Output
@@ -92,10 +94,40 @@ docker-compose up --build
 ```
 - API starts on port **8000**
 - Verify health: `http://localhost:8000/healthz` → `{"status": "healthy"}`
+- Swagger UI: `http://localhost:8000/docs`
 - View model info: `http://localhost:8000/info`
 - View metrics: `http://localhost:8000/metrics`
 
-### Step 3 — Run the Desktop Client
+### Step 3 — (Optional) Run with NVIDIA Triton
+```bash
+# Place model in Triton repository
+mkdir -p deployment/triton/skin_lesion_classifier/1
+cp models/efficientnet_quant_int8.onnx deployment/triton/skin_lesion_classifier/1/model.onnx
+
+# Start Triton server (requires NVIDIA GPU + Docker)
+docker-compose -f deployment/docker-compose.triton.yml up
+
+# Run a prediction via the Triton client
+pip install tritonclient[http] pillow
+python deployment/triton/triton_client.py --image path/to/lesion.jpg
+```
+
+### Step 4 — (Optional) Deploy to AWS ECS Fargate
+```bash
+# Configure AWS credentials
+aws configure
+
+# Build, push to ECR, and deploy to ECS in one command
+chmod +x aws/deploy_aws.sh
+./aws/deploy_aws.sh
+
+# Or use Terraform for full infrastructure provisioning
+cd aws/terraform
+terraform init
+terraform apply -var="account_id=$(aws sts get-caller-identity --query Account --output text)"
+```
+
+### Step 5 — Run the Desktop Client
 ```bash
 cd client/DermDiagnostic.Wpf
 dotnet run

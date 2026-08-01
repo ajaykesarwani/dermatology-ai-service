@@ -1,0 +1,60 @@
+# NVIDIA Triton Inference Server — Deployment
+#
+# This compose file replaces the FastAPI server with NVIDIA Triton,
+# a production-grade multi-model inference server that supports
+# dynamic batching, concurrent model execution, and GPU acceleration.
+#
+# Usage:
+#   docker-compose -f deployment/docker-compose.triton.yml up
+#
+# Prerequisites:
+#   - NVIDIA Container Toolkit installed
+#   - Model file placed at: deployment/triton/skin_lesion_classifier/1/model.onnx
+#     (copy models/efficientnet_quant_int8.onnx → deployment/triton/skin_lesion_classifier/1/model.onnx)
+
+services:
+  triton:
+    image: nvcr.io/nvidia/tritonserver:24.01-py3
+    container_name: dermatology-triton
+    restart: unless-stopped
+    shm_size: "2g"
+
+    # GPU access (remove the 'deploy' section if running CPU-only)
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [ gpu ]
+
+    ports:
+      - "8000:8000"   # HTTP inference
+      - "8001:8001"   # gRPC inference
+      - "8002:8002"   # Prometheus metrics
+
+    volumes:
+      # Model repository: Triton expects the structure:
+      #   <model_repository>/<model_name>/<version>/<model_file>
+      - ./triton:/models:ro
+
+    command: >
+      tritonserver
+      --model-repository=/models
+      --model-control-mode=poll
+      --repository-poll-secs=30
+      --log-verbose=1
+      --metrics-port=8002
+
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/v2/health/ready" ]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 5
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
