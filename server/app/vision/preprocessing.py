@@ -59,8 +59,13 @@ def preprocess_image(image_bytes: bytes, target_size=(224, 224)) -> np.ndarray:
     # Convert BGR to RGB
     rgb = cv2.cvtColor(resized, cv2.COLOR_BGR2RGB)
     
-    # Normalize to [0, 1] range (and potentially mean/std for specific model)
+    # Normalize to [0, 1] range
     normalized = rgb.astype(np.float32) / 255.0
+    
+    # Apply ImageNet mean and std normalization
+    mean = np.array([0.485, 0.456, 0.406], dtype=np.float32)
+    std = np.array([0.229, 0.224, 0.225], dtype=np.float32)
+    normalized = (normalized - mean) / std
     
     # Change format from HWC to CHW for PyTorch/ONNX
     chw_img = np.transpose(normalized, (2, 0, 1))

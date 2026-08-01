@@ -75,7 +75,10 @@ Running `models/benchmark.py` demonstrates the latency improvements of the ONNX 
 # Create a virtual environment and install dependencies
 python -m venv venv
 .\venv\Scripts\Activate.ps1
-pip install torch torchvision onnx onnxruntime
+pip install torch torchvision onnx onnxruntime datasets tqdm
+
+# (Optional) Train the model yourself on HAM10000 (Requires ~3GB download and GPU)
+python models/train.py
 
 # Export and quantize the model
 python models/export_onnx.py
@@ -125,4 +128,4 @@ pytest server/tests/ -v
 
 ---
 
-> ⚕️ **Medical Disclaimer**: This project is intended for software architecture demonstration and educational purposes only. It is **not** a certified medical device and must not be used for clinical diagnosis.
+> ⚕️ **Medical Disclaimer**: This project is intended for software architecture demonstration, educational purposes, and portfolio showcasing only. It is **not** a certified medical device (FDA/CE) and must not be used for clinical diagnosis. While the included ResNet-18 model pipeline is designed to be fully trained on the genuine HAM10000 medical dataset, real-world clinical deployment requires strict regulatory approval and extensive rigorous clinical validation.

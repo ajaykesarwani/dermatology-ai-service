@@ -46,3 +46,4 @@ client/**/obj/
 *.tmp
 *.bak
 images.jfif
+*.pth

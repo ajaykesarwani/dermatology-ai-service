@@ -50,25 +50,7 @@ spec:
           initialDelaySeconds: 10
           periodSeconds: 10
           timeoutSeconds: 5
-        volumeMounts:
-        - name: model-volume
-          mountPath: /models
-          readOnly: true
-      volumes:
-      - name: model-volume
-        persistentVolumeClaim:
-          claimName: model-pvc
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: model-pvc
-spec:
-  accessModes:
-    - ReadWriteMany
-  resources:
-    requests:
-      storage: 2Gi
+
 ---
 apiVersion: v1
 kind: Service

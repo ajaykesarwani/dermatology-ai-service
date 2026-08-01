@@ -138,6 +138,15 @@ class InfoResponse(BaseModel):
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
+@app.get("/", tags=["Operations"])
+async def root():
+    """Root endpoint indicating service status."""
+    return {
+        "service": "Dermatology AI Inference Service",
+        "status": "online",
+        "documentation": "/docs"
+    }
+
 @app.get("/healthz", response_model=HealthResponse, tags=["Operations"])
 async def health_check(request: Request):
     """Kubernetes liveness / readiness probe."""
@@ -196,12 +205,12 @@ async def predict(request: Request, file: UploadFile = File(...)):
         )
 
     # File size guard
-    contents = await file.read()
-    if len(contents) > MAX_FILE_SIZE_BYTES:
+    if getattr(file, 'size', 0) and getattr(file, 'size', 0) > MAX_FILE_SIZE_BYTES:
         raise HTTPException(
             status_code=413,
-            detail=f"File too large ({len(contents) // 1024} KB). Maximum allowed: 10 MB.",
+            detail=f"File too large ({file.size // 1024} KB). Maximum allowed: 10 MB.",
         )
+    contents = await file.read()
 
     start_time = time.perf_counter()
     try:
@@ -214,7 +223,10 @@ async def predict(request: Request, file: UploadFile = File(...)):
 
         predicted_idx = int(np.argmax(probs))
         confidence = float(probs[predicted_idx])
-        diagnosis = DIAGNOSES[predicted_idx % len(DIAGNOSES)]
+        if predicted_idx < len(DIAGNOSES):
+            diagnosis = DIAGNOSES[predicted_idx]
+        else:
+            diagnosis = f"Unknown Class (Index {predicted_idx})"
 
         latency_ms = (time.perf_counter() - start_time) * 1000
         _record_request(latency_ms)

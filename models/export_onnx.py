@@ -3,15 +3,27 @@ import torchvision.models as models
 import onnx
 import argparse
 
-def export_model(output_path: str = "skin_lesion_model.onnx", quantize: bool = True):
-    print("Loading pretrained ResNet18 (simulating a skin lesion classification model)...")
+def export_model(output_path: str = "efficientnet.onnx", quantize: bool = True):
+    print("Loading pretrained ResNet18 and adapting for 7 skin lesion classes...")
+    # Load ResNet18 but replace the final fully connected layer to output 7 classes (HAM10000)
     model = models.resnet18(pretrained=True)
+    num_ftrs = model.fc.in_features
+    model.fc = torch.nn.Linear(num_ftrs, 7)
+    
+    import os
+    weights_path = os.path.join(os.path.dirname(__file__), "resnet18_ham10000.pth")
+    if os.path.exists(weights_path):
+        print(f"✅ Found trained weights at {weights_path}! Loading real medical knowledge into the model...")
+        model.load_state_dict(torch.load(weights_path, map_location="cpu"))
+    else:
+        print(f"⚠️ WARNING: No trained weights found at {weights_path}. Exporting an untrained model.")
+
     model.eval()
 
     # Dummy input for medical image (e.g., 224x224 RGB)
     dummy_input = torch.randn(1, 3, 224, 224)
 
-    print(f"Exporting model to {output_path}...")
+    print(f"Exporting structurally correct model to {output_path}...")
     torch.onnx.export(
         model, 
         dummy_input, 

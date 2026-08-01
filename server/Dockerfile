@@ -9,11 +9,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # ── Python dependencies ──────────────────────────────────────────────────────
 WORKDIR /app
-COPY requirements.txt .
+COPY server/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # ── Application code ─────────────────────────────────────────────────────────
-COPY app/ ./app/
+COPY server/app/ ./app/
+COPY models/ /models/
 
 # ── Security: run as non-root ─────────────────────────────────────────────────
 RUN adduser --disabled-password --gecos "" appuser \
