@@ -22,7 +22,6 @@ namespace DermDiagnostic.Wpf
 
         private static readonly HttpClient _httpClient = new HttpClient
         {
-            BaseAddress = new Uri("http://localhost:8000/"),
             Timeout = TimeSpan.FromSeconds(60)
         };
 
@@ -100,7 +99,10 @@ namespace DermDiagnostic.Wpf
                 fileContent.Headers.ContentType = MediaTypeHeaderValue.Parse(GetMimeType(_currentImagePath));
                 form.Add(fileContent, "file", Path.GetFileName(_currentImagePath));
 
-                HttpResponseMessage response = await _httpClient.PostAsync("predict", form, token);
+                string? envUrl = (CmbEnvironment.SelectedItem as System.Windows.Controls.ComboBoxItem)?.Tag?.ToString();
+                string targetUrl = (envUrl ?? "http://localhost:8000/").TrimEnd('/') + "/predict";
+
+                HttpResponseMessage response = await _httpClient.PostAsync(targetUrl, form, token);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -144,7 +146,7 @@ namespace DermDiagnostic.Wpf
             }
             catch (HttpRequestException ex)
             {
-                ShowError($"Cannot reach API at http://localhost:8000\n\nIs Docker running?\n\n{ex.Message}");
+                ShowError($"Cannot reach API.\nIf using Local Docker, ensure the container is running.\nIf using Cloud API, it may take 30s to wake up.\n\n{ex.Message}");
             }
             catch (Exception ex)
             {

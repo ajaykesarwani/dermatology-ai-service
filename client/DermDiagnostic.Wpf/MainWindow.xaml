@@ -120,6 +120,14 @@
                     <StackPanel>
                         <TextBlock Text="ACTIONS" FontSize="11" FontWeight="Bold"
                                    Foreground="{StaticResource TextMuted}" Margin="0,0,0,12"/>
+
+                        <TextBlock Text="Environment" FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{StaticResource TextMuted}" Margin="0,0,0,4"/>
+                        <ComboBox x:Name="CmbEnvironment" Margin="0,0,0,12" SelectedIndex="0" Height="28">
+                            <ComboBoxItem Content="Local Docker (localhost:8000)" Tag="http://localhost:8000/" />
+                            <ComboBoxItem Content="Cloud API (Render)" Tag="https://dermatology-ai-service.onrender.com/" />
+                        </ComboBox>
+
                         <Button Content="📂  Load Dermoscopic Image"
                                 Style="{StaticResource PrimaryButton}"
                                 Margin="0,0,0,10"
