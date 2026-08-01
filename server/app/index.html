@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DermDiagnostic AI</title>
+    <!-- Use Tailwind CSS for rapid, premium styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #0f0f1a;
+            color: #e2e8f0;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+        .glass-card {
+            background: rgba(26, 26, 46, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+        .file-drop-area {
+            border: 2px dashed #4f8ef7;
+            transition: all 0.3s ease;
+        }
+        .file-drop-area.dragover {
+            background: rgba(79, 142, 247, 0.1);
+            border-color: #6ba3fa;
+        }
+        #confidence-bar {
+            transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-6">
+
+    <div class="max-w-4xl w-full">
+        <!-- Header -->
+        <div class="mb-8 text-center">
+            <h1 class="text-4xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400">
+                🔬 DermDiagnostic AI
+            </h1>
+            <p class="text-slate-400">Enterprise Skin Lesion Classification • ONNX Runtime INT8</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Left: Upload Area -->
+            <div class="glass-card rounded-2xl p-6 flex flex-col">
+                <h2 class="text-sm font-bold text-slate-400 mb-4 tracking-wider">IMAGE INPUT</h2>
+                
+                <div id="drop-area" class="file-drop-area rounded-xl p-8 flex flex-col items-center justify-center flex-grow cursor-pointer relative overflow-hidden group">
+                    <input type="file" id="file-input" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" accept="image/jpeg, image/png, image/bmp">
+                    
+                    <div id="upload-prompt" class="text-center transition-opacity duration-300">
+                        <svg class="w-12 h-12 text-blue-500 mb-4 mx-auto group-hover:-translate-y-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                        <p class="text-blue-400 font-medium">Click or drag image here</p>
+                        <p class="text-slate-500 text-sm mt-2">JPEG, PNG up to 10MB</p>
+                    </div>
+
+                    <img id="image-preview" class="absolute inset-0 w-full h-full object-cover hidden" alt="Preview">
+                </div>
+
+                <button id="btn-analyze" disabled class="w-full mt-6 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 disabled:text-slate-500 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200">
+                    Run AI Inference
+                </button>
+            </div>
+
+            <!-- Right: Results Area -->
+            <div class="glass-card rounded-2xl p-6 flex flex-col justify-between">
+                <div>
+                    <h2 class="text-sm font-bold text-slate-400 mb-4 tracking-wider">DIAGNOSIS</h2>
+                    
+                    <div id="result-placeholder" class="text-slate-500 text-center py-12">
+                        Upload an image and run inference to see results.
+                    </div>
+
+                    <div id="result-content" class="hidden">
+                        <div class="flex items-center space-x-3 mb-2">
+                            <span id="short-code" class="bg-slate-800 text-blue-400 font-mono px-3 py-1 rounded-md text-sm font-bold"></span>
+                            <span id="latency-badge" class="bg-slate-800 text-emerald-400 px-3 py-1 rounded-md text-xs font-semibold border border-slate-700"></span>
+                        </div>
+                        <h3 id="diagnosis-text" class="text-2xl font-semibold text-white mb-6"></h3>
+
+                        <h4 class="text-xs font-bold text-slate-400 mb-2 tracking-wider">CONFIDENCE</h4>
+                        <div class="w-full bg-slate-800 rounded-full h-2.5 mb-2 relative overflow-hidden">
+                            <div id="confidence-bar" class="h-2.5 rounded-full bg-blue-500" style="width: 0%"></div>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span id="confidence-text" class="text-slate-300 font-medium"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-8 pt-4 border-t border-slate-800 flex justify-between items-center text-xs text-slate-500">
+                    <span>Powered by FastAPI & ONNX Runtime</span>
+                    <a href="/docs" target="_blank" class="hover:text-blue-400 transition-colors flex items-center gap-1">
+                        View API Docs <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('file-input');
+        const dropArea = document.getElementById('drop-area');
+        const preview = document.getElementById('image-preview');
+        const prompt = document.getElementById('upload-prompt');
+        const btnAnalyze = document.getElementById('btn-analyze');
+        
+        const resPlaceholder = document.getElementById('result-placeholder');
+        const resContent = document.getElementById('result-content');
+        const shortCode = document.getElementById('short-code');
+        const diagText = document.getElementById('diagnosis-text');
+        const confBar = document.getElementById('confidence-bar');
+        const confText = document.getElementById('confidence-text');
+        const latencyBadge = document.getElementById('latency-badge');
+
+        let currentFile = null;
+
+        // Handle file selection
+        fileInput.addEventListener('change', function(e) {
+            handleFile(e.target.files[0]);
+        });
+
+        // Drag and drop events
+        dropArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropArea.classList.add('dragover');
+        });
+        dropArea.addEventListener('dragleave', () => dropArea.classList.remove('dragover'));
+        dropArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropArea.classList.remove('dragover');
+            if (e.dataTransfer.files.length) {
+                fileInput.files = e.dataTransfer.files;
+                handleFile(e.dataTransfer.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            if (!file || !file.type.startsWith('image/')) return;
+            currentFile = file;
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                preview.src = e.target.result;
+                preview.classList.remove('hidden');
+                prompt.classList.add('opacity-0');
+                btnAnalyze.disabled = false;
+                
+                // Reset results
+                resContent.classList.add('hidden');
+                resPlaceholder.classList.remove('hidden');
+                confBar.style.width = '0%';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function extractCode(diagnosis) {
+            const match = diagnosis.match(/\((.*?)\)/);
+            return match ? match[1].toUpperCase() : "UNK";
+        }
+
+        // Run inference
+        btnAnalyze.addEventListener('click', async () => {
+            if (!currentFile) return;
+
+            btnAnalyze.disabled = true;
+            btnAnalyze.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-5 w-5 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Analyzing...`;
+
+            const formData = new FormData();
+            formData.append('file', currentFile);
+
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) throw new Error(await response.text());
+                
+                const data = await response.json();
+                
+                // Update UI
+                resPlaceholder.classList.add('hidden');
+                resContent.classList.remove('hidden');
+                
+                shortCode.textContent = extractCode(data.diagnosis);
+                diagText.textContent = data.diagnosis;
+                
+                const confPercent = data.confidence * 100;
+                confText.textContent = `${confPercent.toFixed(1)}% Confidence`;
+                
+                // Animate bar
+                setTimeout(() => { confBar.style.width = `${confPercent}%`; }, 50);
+
+                // Color code
+                if (data.confidence >= 0.6) confBar.className = "h-2.5 rounded-full bg-emerald-500";
+                else if (data.confidence >= 0.35) confBar.className = "h-2.5 rounded-full bg-amber-500";
+                else confBar.className = "h-2.5 rounded-full bg-red-500";
+
+                latencyBadge.innerHTML = `⚡ ${data.processing_time_ms.toFixed(1)} ms`;
+
+            } catch (err) {
+                alert("Error during inference: " + err.message);
+            } finally {
+                btnAnalyze.disabled = false;
+                btnAnalyze.textContent = "Run AI Inference";
+            }
+        });
+    </script>
+</body>
+</html>

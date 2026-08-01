@@ -9,7 +9,7 @@ import numpy as np
 import onnxruntime as ort
 from fastapi import FastAPI, File, UploadFile, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 from pydantic import BaseModel
 
 from app.vision.preprocessing import preprocess_image
@@ -140,7 +140,10 @@ class InfoResponse(BaseModel):
 # ---------------------------------------------------------------------------
 @app.get("/", tags=["Operations"])
 async def root():
-    """Root endpoint indicating service status."""
+    """Root endpoint serving the Web UI."""
+    html_path = os.path.join(os.path.dirname(__file__), "index.html")
+    if os.path.exists(html_path):
+        return FileResponse(html_path)
     return {
         "service": "Dermatology AI Inference Service",
         "status": "online",
