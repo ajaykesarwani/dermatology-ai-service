@@ -1,0 +1,61 @@
+# DermDiagnostic AI — Docker Build Ignore
+#
+# Without this file the entire project root is sent to the Docker daemon as
+# build context.  The venv/ directory alone is hundreds of MB and should never
+# be copied into the image.
+
+# Python virtual environments (R6 FIX: was bloating Docker build context)
+venv/
+env/
+.venv/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Model binary files (large; mounted as a volume at runtime)
+models/*.onnx
+models/*.onnx.data
+models/*.pth
+
+# Allow the quantized INT8 model to be copied into the container
+!models/resnet18_quant_int8.onnx
+
+# Trained model checkpoints
+models/*.pth
+
+# Git history and metadata
+.git/
+.gitignore
+
+# IDE config
+.vscode/
+.idea/
+
+# CI/CD configs (not needed inside the container)
+.github/
+
+# .NET client (not part of the Python service)
+client/
+
+# Deployment configs
+deployment/
+render.yaml
+aws/
+
+# Dev/doc files
+README.md
+ARCHITECTURE.md
+progress.md
+*.md
+
+# Test files
+server/tests/
+
+# Misc
+*.jfif
+*.webp
+*.tmp
+*.bak
