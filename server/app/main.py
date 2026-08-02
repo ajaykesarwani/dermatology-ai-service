@@ -267,10 +267,6 @@ async def predict(request: Request, file: UploadFile = File(...)):
     Accepts a dermoscopic image (JPEG / PNG / BMP), applies the Dull Razor
     preprocessing pipeline, and returns an ONNX-based skin lesion classification.
     """
-    session = request.app.state.session
-    if session is None:
-        raise HTTPException(status_code=503, detail="Model not loaded")
-
     # MIME type validation
     valid_mime_types = {"image/jpeg", "image/png", "image/bmp"}
     if file.content_type not in valid_mime_types:
@@ -281,6 +277,10 @@ async def predict(request: Request, file: UploadFile = File(...)):
 
     # Fix #4 — streaming size guard that works even when Content-Length is absent
     contents = await _read_with_size_limit(file)
+
+    session = request.app.state.session
+    if session is None:
+        raise HTTPException(status_code=503, detail="Model not loaded")
 
     start_time = time.perf_counter()
     try:
