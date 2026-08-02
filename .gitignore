@@ -19,6 +19,9 @@ models/*.onnx
 models/*.onnx.data
 models/*_preprocessed.onnx
 
+# Allow the quantized INT8 model to be tracked (only ~11MB) so cloud deployments like Render can use it
+!models/resnet18_quant_int8.onnx
+
 # Jupyter
 *.ipynb_checkpoints/
 .ipynb_checkpoints/
