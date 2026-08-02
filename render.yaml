@@ -8,8 +8,16 @@ services:
     dockerfilePath: server/Dockerfile
     healthCheckPath: /healthz
     envVars:
-      # Render dynamically provides a PORT environment variable (default 10000).
-      # However, our Dockerfile explicitly runs uvicorn on port 8000.
-      # By forcing PORT=8000, Render will map external HTTPS traffic to our container correctly.
-      - key: PORT
-        value: 8000
+      # Fix #16 — Render injects its own PORT value (default 10000).
+      # Our Dockerfile CMD uses ${PORT:-8000}, so Render's PORT is honoured
+      # automatically without any override needed here.
+      #
+      # Fix #1 — updated to the correct ResNet-18 model filename
+      - key: MODEL_PATH
+        value: /models/resnet18_quant_int8.onnx
+      # Fix #7 — set to the Render service URL once deployed
+      - key: ALLOWED_ORIGINS
+        value: https://dermatology-ai-api.onrender.com
+      # Fix #8 — generate a strong random value and store it as a Render secret env var
+      - key: METRICS_API_KEY
+        sync: false   # marks this as a secret to be set manually in the Render dashboard

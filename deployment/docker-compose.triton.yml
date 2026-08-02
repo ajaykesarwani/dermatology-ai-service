@@ -10,7 +10,7 @@
 # Prerequisites:
 #   - NVIDIA Container Toolkit installed
 #   - Model file placed at: deployment/triton/skin_lesion_classifier/1/model.onnx
-#     (copy models/efficientnet_quant_int8.onnx → deployment/triton/skin_lesion_classifier/1/model.onnx)
+#     (copy models/resnet18_quant_int8.onnx → deployment/triton/skin_lesion_classifier/1/model.onnx)
 
 services:
   triton:

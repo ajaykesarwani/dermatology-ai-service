@@ -47,3 +47,6 @@ client/**/obj/
 *.bak
 images.jfif
 *.pth
+
+# Fix #15 — also ignore WebP images dropped into the project root during testing
+*.webp

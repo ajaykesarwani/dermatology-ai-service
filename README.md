@@ -85,7 +85,7 @@ python models/train.py
 # Export and quantize the model
 python models/export_onnx.py
 ```
-This generates `models/efficientnet.onnx` and `models/efficientnet_quant_int8.onnx`.
+This generates `models/resnet18.onnx` and `models/resnet18_quant_int8.onnx`.
 
 ### Step 2 — Start the Inference Microservice
 ```bash
@@ -102,13 +102,13 @@ docker-compose up --build
 ```bash
 # Place model in Triton repository
 mkdir -p deployment/triton/skin_lesion_classifier/1
-cp models/efficientnet_quant_int8.onnx deployment/triton/skin_lesion_classifier/1/model.onnx
+cp models/resnet18_quant_int8.onnx deployment/triton/skin_lesion_classifier/1/model.onnx
 
 # Start Triton server (requires NVIDIA GPU + Docker)
 docker-compose -f deployment/docker-compose.triton.yml up
 
 # Run a prediction via the Triton client
-pip install tritonclient[http] pillow
+pip install tritonclient[http] opencv-python-headless
 python deployment/triton/triton_client.py --image path/to/lesion.jpg
 ```
 
@@ -144,8 +144,9 @@ dotnet run
 # Install test dependencies
 pip install pytest httpx
 
+# R10 FIX — PYTHONPATH must include server/ so `from app.main import ...` resolves.
 # Run the test suite
-pytest server/tests/ -v
+PYTHONPATH=server pytest server/tests/ -v
 ```
 
 ---

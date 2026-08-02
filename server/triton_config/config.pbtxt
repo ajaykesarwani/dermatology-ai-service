@@ -1,31 +1,21 @@
-name: "skin_lesion_model"
-platform: "onnxruntime_onnx"
-max_batch_size: 16
-
-input [
-  {
-    name: "input"
-    data_type: TYPE_FP32
-    format: FORMAT_NCHW
-    dims: [ 3, 224, 224 ]
-  }
-]
-
-output [
-  {
-    name: "output"
-    data_type: TYPE_FP32
-    dims: [ 7 ] # Assuming 7 classes (e.g., HAM10000 dataset)
-  }
-]
-
-instance_group [
-  {
-    count: 2
-    kind: KIND_GPU
-  }
-]
-
-dynamic_batching {
-  max_queue_delay_microseconds: 50000
-}
+# ── DEPRECATED — Redundant Triton Config ──────────────────────────────────────
+#
+# H3 FIX: This directory contained a conflicting Triton model config that used
+# a different model name ("skin_lesion_model") compared to the authoritative
+# deployment config ("skin_lesion_classifier") at:
+#
+#   deployment/triton/skin_lesion_classifier/config.pbtxt
+#
+# The authoritative config has:
+#   • Correct model name ("skin_lesion_classifier")
+#   • CPU fallback instance group (KIND_CPU)
+#   • TensorRT FP16 GPU acceleration
+#   • OpenVINO CPU acceleration
+#   • Dynamic batching with preferred batch sizes [4, 8, 16]
+#   • max_batch_size: 32
+#
+# This file is kept as a placeholder so git does not remove the directory.
+# DO NOT deploy this config — use deployment/triton/skin_lesion_classifier/ instead.
+#
+# The correct Triton docker-compose command is:
+#   docker-compose -f deployment/docker-compose.triton.yml up

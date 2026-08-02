@@ -64,6 +64,9 @@ namespace DermDiagnostic.Wpf
             _currentImagePath = dialog.FileName;
             ImgDisplay.Source = new BitmapImage(new Uri(_currentImagePath));
             TxtPlaceholder.Visibility = Visibility.Collapsed;
+            // Fix #11 — OverlayCanvas is reserved for future bounding-box / lesion-boundary
+            // annotation overlays drawn on top of the image (e.g. grad-CAM heatmaps).
+            // Clearing it on each load ensures stale overlays from a previous image are removed.
             OverlayCanvas.Children.Clear();
 
             BtnAnalyze.IsEnabled = true;
@@ -147,6 +150,17 @@ namespace DermDiagnostic.Wpf
             catch (HttpRequestException ex)
             {
                 ShowError($"Cannot reach API.\nIf using Local Docker, ensure the container is running.\nIf using Cloud API, it may take 30s to wake up.\n\n{ex.Message}");
+            }
+            // M5 FIX — explicitly handle file system errors that occur when the image
+            // is deleted, moved, or locked between the time the user selects it and
+            // clicks Analyze.  The generic Exception catch below gives a cryptic message.
+            catch (IOException ex)
+            {
+                ShowError($"Cannot read image file.\nThe file may have been moved, deleted, or is locked by another process.\n\nPath: {_currentImagePath}\n\n{ex.Message}");
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                ShowError($"Access denied when reading image file.\nEnsure you have permission to read this file.\n\nPath: {_currentImagePath}\n\n{ex.Message}");
             }
             catch (Exception ex)
             {

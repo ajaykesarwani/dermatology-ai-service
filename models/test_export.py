@@ -1,36 +1,17 @@
-import torch
-from transformers import AutoModelForImageClassification
-import sys
-
-def main():
-    model_name = "kusumrss/ham10000-efficientnet-b2"
-    print(f"Downloading model: {model_name}...")
-    try:
-        model = AutoModelForImageClassification.from_pretrained(model_name)
-        model.eval()
-        
-        dummy_input = torch.randn(1, 3, 224, 224)
-        output_path = "test_export.onnx"
-        
-        print(f"Exporting model to {output_path}...")
-        torch.onnx.export(
-            model, 
-            dummy_input, 
-            output_path,
-            export_params=True,
-            opset_version=14,
-            do_constant_folding=True,
-            input_names=['input'],
-            output_names=['output']
-        )
-        print("Export successful!")
-        
-        # Print id2label
-        print("Classes:", model.config.id2label)
-        
-    except Exception as e:
-        print(f"Error: {e}")
-        sys.exit(1)
-
-if __name__ == "__main__":
-    main()
+# ⛔ DEPRECATED — This file is an orphaned R&D scratch script and is NOT
+# part of the active model pipeline.
+#
+# What it was: An early experiment that downloaded a HuggingFace EfficientNet-B2
+# model ('kusumrss/ham10000-efficientnet-b2') and exported it to ONNX using
+# opset 14.  It was superseded by:
+#
+#   models/export_onnx.py  — the authoritative export script (ResNet-18, opset 18)
+#   models/train.py        — the authoritative training script
+#
+# The `transformers` library this script requires is not in requirements.txt
+# and must not be installed in the inference container.
+#
+# Do NOT run this script.  It will be removed in a future cleanup.
+raise SystemExit(
+    "This script is deprecated. Use models/export_onnx.py instead."
+)

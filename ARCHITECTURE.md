@@ -85,11 +85,12 @@ Raw JPEG/PNG/BMP
 | Training Dataset | HAM10000 (10,015 real dermoscopic images) |
 | Output Classes | 7 (akiec, bcc, bkl, df, mel, nv, vasc) |
 | Final Layer | `nn.Linear(512, 7)` |
-| Loss Function | CrossEntropyLoss |
-| Optimizer | AdamW (lr=1e-4) |
-| Training Epochs | 5 |
+| Loss Function | Weighted CrossEntropyLoss (inverse-frequency class weights) |
+| Optimizer | AdamW (lr=1e-4, weight_decay=1e-4) + ReduceLROnPlateau |
+| Training Epochs | 10 |
+| Validation Split | 15% stratified hold-out |
 | Export Format | ONNX opset 18 |
-| Inference Format | INT8 Dynamic Quantization |
+| Inference Format | INT8 Dynamic Quantization (signed QInt8) |
 | Inference Speed | ~22ms on CPU (i7), ~5ms on GPU |
 
 ---
@@ -101,7 +102,7 @@ Raw JPEG/PNG/BMP
 Developer Machine
 └── docker-compose up --build
     └── FastAPI container (port 8000)
-        └── models/efficientnet_quant_int8.onnx (read-only volume)
+        └── models/resnet18_quant_int8.onnx (read-only volume)
 ```
 
 ### 2. NVIDIA Triton Inference Server

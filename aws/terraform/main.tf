@@ -203,8 +203,20 @@ resource "aws_ecs_task_definition" "api" {
     portMappings = [{ containerPort = 8000, protocol = "tcp" }]
 
     environment = [
-      { name = "MODEL_PATH",       value = "/models/efficientnet_quant_int8.onnx" },
-      { name = "PYTHONUNBUFFERED", value = "1" }
+      # C3 FIX — updated to match actual ResNet-18 model filename
+      { name = "MODEL_PATH",       value = "/models/resnet18_quant_int8.onnx" },
+      { name = "PYTHONUNBUFFERED", value = "1" },
+      # Restrict CORS in production — replace with your actual domain(s)
+      { name = "ALLOWED_ORIGINS",  value = "https://your-production-domain.com" }
+    ]
+
+    secrets = [
+      # METRICS_API_KEY is pulled from Secrets Manager — create the secret first:
+      # aws secretsmanager create-secret --name dermatology/metrics-api-key --secret-string "<strong-random-key>"
+      {
+        name      = "METRICS_API_KEY"
+        valueFrom = "arn:aws:secretsmanager:${var.aws_region}:${var.account_id}:secret:dermatology/metrics-api-key"
+      }
     ]
 
     logConfiguration = {

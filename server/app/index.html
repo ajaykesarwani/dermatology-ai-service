@@ -88,6 +88,12 @@
                             <span id="confidence-text" class="text-slate-300 font-medium"></span>
                         </div>
                     </div>
+
+                    <!-- M3 FIX: inline error panel replaces blocking alert() -->
+                    <div id="error-panel" class="hidden mt-4 p-4 rounded-xl border border-red-500/30 bg-red-900/20">
+                        <p class="text-xs font-bold text-red-400 mb-1 tracking-wider">INFERENCE ERROR</p>
+                        <p id="error-text" class="text-sm text-red-300 break-words"></p>
+                    </div>
                 </div>
 
                 <div class="mt-8 pt-4 border-t border-slate-800 flex justify-between items-center text-xs text-slate-500">
@@ -161,11 +167,25 @@
             return match ? match[1].toUpperCase() : "UNK";
         }
 
+        // M3 FIX — helper to show errors inline in the dark UI instead of alert()
+        function showError(message) {
+            const panel = document.getElementById('error-panel');
+            document.getElementById('error-text').textContent = message;
+            panel.classList.remove('hidden');
+            resContent.classList.add('hidden');
+            resPlaceholder.classList.add('hidden');
+        }
+
+        function hideError() {
+            document.getElementById('error-panel').classList.add('hidden');
+        }
+
         // Run inference
         btnAnalyze.addEventListener('click', async () => {
             if (!currentFile) return;
 
             btnAnalyze.disabled = true;
+            hideError();
             btnAnalyze.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-5 w-5 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Analyzing...`;
 
             const formData = new FormData();
@@ -177,20 +197,29 @@
                     body: formData
                 });
 
-                if (!response.ok) throw new Error(await response.text());
-                
+                if (!response.ok) {
+                    // M4 FIX — FastAPI returns JSON error bodies like {"detail":"..."}.
+                    // Parsing as .text() showed raw JSON to the user.  Now we extract
+                    // the human-readable `detail` field, falling back to raw text.
+                    const errData = await response.json().catch(async () => ({
+                        detail: await response.text()
+                    }));
+                    throw new Error(errData.detail || `HTTP ${response.status}`);
+                }
+
                 const data = await response.json();
-                
+
                 // Update UI
+                hideError();
                 resPlaceholder.classList.add('hidden');
                 resContent.classList.remove('hidden');
-                
+
                 shortCode.textContent = extractCode(data.diagnosis);
-                diagText.textContent = data.diagnosis;
-                
+                diagText.textContent  = data.diagnosis;
+
                 const confPercent = data.confidence * 100;
                 confText.textContent = `${confPercent.toFixed(1)}% Confidence`;
-                
+
                 // Animate bar
                 setTimeout(() => { confBar.style.width = `${confPercent}%`; }, 50);
 
@@ -202,7 +231,8 @@
                 latencyBadge.innerHTML = `⚡ ${data.processing_time_ms.toFixed(1)} ms`;
 
             } catch (err) {
-                alert("Error during inference: " + err.message);
+                // M3 FIX — inline error display instead of blocking alert()
+                showError(err.message);
             } finally {
                 btnAnalyze.disabled = false;
                 btnAnalyze.textContent = "Run AI Inference";

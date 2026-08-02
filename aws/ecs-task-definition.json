@@ -18,8 +18,21 @@
         }
       ],
       "environment": [
-        { "name": "MODEL_PATH",        "value": "/models/efficientnet_quant_int8.onnx" },
-        { "name": "PYTHONUNBUFFERED",  "value": "1" }
+        {
+          "name": "MODEL_PATH",
+          "value": "/models/resnet18_quant_int8.onnx"
+        },
+        { "name": "PYTHONUNBUFFERED", "value": "1" },
+        {
+          "name": "ALLOWED_ORIGINS",
+          "value": "https://your-production-domain.com"
+        }
+      ],
+      "secrets": [
+        {
+          "name": "METRICS_API_KEY",
+          "valueFrom": "arn:aws:secretsmanager:<AWS_REGION>:<AWS_ACCOUNT_ID>:secret:dermatology/metrics-api-key"
+        }
       ],
       "logConfiguration": {
         "logDriver": "awslogs",

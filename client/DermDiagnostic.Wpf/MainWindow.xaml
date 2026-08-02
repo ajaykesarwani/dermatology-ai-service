@@ -206,7 +206,7 @@
                 <TextBlock x:Name="TxtStatus" Text="Ready — load an image to begin"
                            Foreground="{StaticResource TextMuted}" FontSize="12"
                            VerticalAlignment="Center"/>
-                <TextBlock Text="DermDiagnostic AI v2.0  •  ONNX Runtime INT8"
+                <TextBlock Text="DermDiagnostic AI v2.1  •  ONNX Runtime INT8"
                            Foreground="{StaticResource TextMuted}" FontSize="11"
                            HorizontalAlignment="Right" VerticalAlignment="Center"/>
             </Grid>

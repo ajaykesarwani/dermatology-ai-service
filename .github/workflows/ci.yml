@@ -42,6 +42,11 @@ jobs:
         docker compose config --quiet
 
     - name: Run unit tests
+      # H2 FIX — PYTHONPATH must include server/ so that `from app.main import ...`
+      # resolves correctly.  Without this, pytest exits immediately with
+      # ModuleNotFoundError: No module named 'app'.
+      env:
+        PYTHONPATH: server
       run: |
         pytest server/tests/ -v --tb=short
 

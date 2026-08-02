@@ -4,7 +4,7 @@ metadata:
   name: dermatology-api-deployment
   labels:
     app: dermatology-api
-    version: "2.0"
+    version: "2.1"
 spec:
   replicas: 2
   selector:
@@ -21,10 +21,21 @@ spec:
         ports:
         - containerPort: 8000
         env:
+        # Fix #1 — model filename reflects actual architecture (ResNet-18, not EfficientNet)
         - name: MODEL_PATH
-          value: "/models/efficientnet_quant_int8.onnx"
+          value: "/models/resnet18_quant_int8.onnx"
         - name: PYTHONUNBUFFERED
           value: "1"
+        # Fix #7 — replace with your ingress domain in production
+        - name: ALLOWED_ORIGINS
+          value: "https://your-production-domain.com"
+        # Fix #8 — reference a Kubernetes Secret in production instead of plain text
+        - name: METRICS_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: dermatology-secrets
+              key: metrics-api-key
+              optional: true            # allows the pod to start even if secret is absent
         resources:
           requests:
             cpu: "500m"
